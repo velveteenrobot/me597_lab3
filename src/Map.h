@@ -15,6 +15,7 @@ class Map {
   bool robotAreaOccupied(Pose robotPose);
 
   int getWidth() { return mWidth; }
+  int getHeight() {return mHeight; }
  private:
   unsigned int mWidth, mHeight;
   float mResolution;
