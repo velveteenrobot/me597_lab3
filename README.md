@@ -1,4 +1,4 @@
-me597_lab3
-==========
+turtlebot_example_lab_2
+=======================
 
-ME 597 Lab 3
+Catkinised lab 2 code for ME 597
