@@ -59,7 +59,7 @@ std::vector< std::vector<double> > get_inverse_m_m(sensor_msgs::LaserScan scan)
   {
     for (int j = 0; j < int (mapWidth/mapRes); j++)
     {
-      double alpha = 0.1;
+      double alpha = 0.05;
       double beta = 0.05;
       tf::Quaternion q;
       tf::quaternionMsgToTF(pose.orientation, q);
@@ -78,11 +78,23 @@ std::vector< std::vector<double> > get_inverse_m_m(sensor_msgs::LaserScan scan)
 
       //If out of range, or behind range measurement, or outside of field
       // of view, no new information is available
-      if ((r > scan.range_max) || (r > range_cur+alpha/2) || (abs(phi-(scan.angle_min + k*scan.angle_increment))>beta/2))
+      if (r > scan.range_max) 
       {
         invMod[i][j] = 0.5;
-        cout<<"don't know"<<endl;
+        cout<<"don't know1"<<endl;
+      }
 
+      else if (r > range_cur+alpha/2) 
+      {
+        invMod[i][j] = 0.5;
+        cout<<"don't know2"<<endl;
+
+      }
+
+      else if (abs(phi-(scan.angle_min + k*scan.angle_increment))>beta/2)
+      {
+        invMod[i][j] = 0.5;
+        cout<<"don't know3"<<endl;
       }
       //If the range measurement was in this cell, likely to be an object
       else if ((range_cur < scan.range_max) && (abs(r-range_cur)<alpha/2))
@@ -106,9 +118,9 @@ std::vector< std::vector<double> > get_inverse_m_m(sensor_msgs::LaserScan scan)
 void pose_callback(const me597_lab3::ips_msg& msg)
 {
   //This function is called when a new position message is received
-  if(msg.tag_id != TAGID) {
+  /*if(msg.tag_id != TAGID) {
     return;
-  }
+  }*/
 
   pose.position.x = msg.X;
   pose.position.y = msg.Y;
