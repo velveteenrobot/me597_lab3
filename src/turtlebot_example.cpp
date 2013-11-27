@@ -27,7 +27,7 @@
 
 #include <vector>
 #include <math.h>       // sqrt, pow 
-#include <algorithm>    // min
+#include <algorithm>    // max
 
 #define PI 3.14159265
 #define MAP_IDX(width, i, j) ((width) * (j) + (i))
@@ -43,6 +43,7 @@ double mapRes = 0.1;
 double mapWidth = 10;
 double mapHeight = 10;
 double robotMotion [3] = {0.5, 0, -0.5};
+double yaw = 0.0;
 nav_msgs::OccupancyGrid knownMapMsg;
 std::vector< std::vector<double> > knownMap(int(mapHeight/mapRes), std::vector<double>(int(mapWidth/mapRes),0));
 
@@ -50,68 +51,81 @@ std::vector< std::vector<double> > LO(int(mapHeight/mapRes), std::vector<double>
 std::vector< std::vector<double> > L(int(mapHeight/mapRes), std::vector<double>(int(mapWidth/mapRes),0));
 ros::Publisher map_pub; 
 
-std::vector< std::vector<double> > get_inverse_m_m(sensor_msgs::LaserScan scan)
+int round_int( double r ) {
+    return (r > 0.0) ? (r + 0.5) : (r - 0.5); 
+}
+
+std::vector< std::vector<int> > bresenham(int x0,int y0,int x1,int y1)
 {
-  std::vector< std::vector<double> > invMod(int(mapHeight/mapRes), std::vector<double>(int(mapWidth/mapRes),0));
+  int dx=fabs(x1-x0);
+  int dy=fabs(y1-y0);
 
-  //Range finder inverse measurement model
-  for (int i = 0; i < int (mapHeight/mapRes); i++)
+  int inc1 = 2*dy;
+  int inc2 = 2*dy - 2*dx;
+  int D = inc2;
+
+  std::vector< std::vector<int> > q(dx + 1, std::vector<int>(2,0));
+
+  //cout<<"Checking bresenham"<<endl;
+  
+  for (int i = 0; i < dx + 1; i++)
   {
-    for (int j = 0; j < int (mapWidth/mapRes); j++)
+    q[i][0] = x0;
+    q[i][1] = y0;
+
+    //cout<<x0<< " " << y0 <<endl;
+
+    if (x0 == x1 && y0 == y1)
     {
-      double alpha = 0.05;
-      double beta = 0.05;
-      tf::Quaternion q;
-      tf::quaternionMsgToTF(pose.orientation, q);
-      double roll, pitch, yaw;
-      tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
-      
-      //Find range and bearing to the current cell
-      double r = sqrt( pow((i*mapRes-pose.position.x),2) + pow((j*mapRes-pose.position.y),2));
-      double phi = fmod((atan2(j*mapRes-pose.position.y,i*mapRes-pose.position.x) - yaw + PI),(2*PI))-PI;
-      //phi = mod(atan2(j-y,i-x)-theta+pi,2*pi)-pi;
-          
-      //Find the applicable range measurement 
-      //[meas_cur,k] = min(abs(phi-meas_phi));
-      int k = round((scan.angle_min - phi)/scan.angle_increment);
-      double range_cur = scan.ranges[k];
-
-      //If out of range, or behind range measurement, or outside of field
-      // of view, no new information is available
-      if (r > scan.range_max) 
-      {
-        invMod[i][j] = 0.5;
-        cout<<"don't know1"<<endl;
-      }
-
-      else if (r > range_cur+alpha/2) 
-      {
-        invMod[i][j] = 0.5;
-        cout<<"don't know2"<<endl;
-
-      }
-
-      else if (abs(phi-(scan.angle_min + k*scan.angle_increment))>beta/2)
-      {
-        invMod[i][j] = 0.5;
-        cout<<"don't know3"<<endl;
-      }
-      //If the range measurement was in this cell, likely to be an object
-      else if ((range_cur < scan.range_max) && (abs(r-range_cur)<alpha/2))
-      {
-        invMod[i][j] = 0.7;
-        cout<<"occupied"<<endl;
-      }   
-      //If the cell is in front of the range measurement, likely to be
-      // empty
-      else if (r < range_cur)
-      { 
-        invMod[i][j] = 0.3;
-        cout<<"free"<<endl;
-      }
+      return q;
+    }
+    x0 = x0 + 1;
+    if (D < 0)
+    {
+      D = D + inc1;
+    }
+    else
+    {
+      D = D + inc2;
+      y0 = y0+1;
     }
   }
 
+  
+
+
+  return q;
+}
+
+std::vector< std::vector<double> > get_inverse_m_m(int M, int N, double theta, double r, double rmax)
+{
+  
+  //Range finder inverse measurement model
+  int x1 = max(1,min(M,round_int(pose.position.x/mapRes)));
+  int y1 = max(1,min(N,round_int(pose.position.y/mapRes)));
+
+  double endpt_x = pose.position.x/mapRes + r*cos(theta);
+  double endpt_y = pose.position.y/mapRes + r*sin(theta);
+
+  int x2 = max(1,min(M,round_int(endpt_x)));
+  int y2 = max(1,min(N,round_int(endpt_y)));
+
+  //[list(:,1) list(:,2)] = bresenham(x1,y1,x2,y2);
+  std::vector< std::vector<int> > bres = bresenham(x1, y1, x2, y2);
+
+  cout<<"Got bresenham"<<endl;
+
+  std::vector< std::vector<double> > invMod(bres.size(), std::vector<double>(3,0.4));
+  for(int i = 0; i < invMod.size(); i++) 
+  {
+
+    invMod[i][0] = double (bres[i][0]);
+    invMod[i][1] = double (bres[i][1]);
+  }
+
+  if (r<rmax)
+    invMod[bres.size() - 1][2] = 0.6;
+  
   return invMod;
 }
 
@@ -128,27 +142,43 @@ void pose_callback(const me597_lab3::ips_msg& msg)
   quaternionTFToMsg(
       tf::createQuaternionFromRPY(0, 0, msg.Yaw),
       pose.orientation);
+
+  yaw = msg.Yaw;
   poseReady = true;
 }
 
 //Callback function for the map
 void scan_callback(const sensor_msgs::LaserScan& msg)
 {
-  std::vector< std::vector<double> > invMod = get_inverse_m_m(msg);
-  
+  cout<<"Scan received"<<endl;
 
-  //Calculate updated log odds
-  //L = L +log(invmod./(1-invmod))-L0;
-  for (int i = 0; i < int (mapHeight/mapRes); i++)
+  int M = int (mapHeight/mapRes);
+  int N = int (mapWidth/mapRes);
+
+  double theta, ix, iy, il;
+  std::vector< std::vector<double> > invMod;
+  //std::vector< std::vector<double> > measL(M, std::vector<double>(N,0.4));
+
+  for (int i = 0; i < msg.ranges.size(); i++)
   {
-    for (int j = 0; j < int (mapWidth/mapRes); j++)
+    theta = yaw + (msg.angle_min  + msg.angle_increment*i);
+    invMod = get_inverse_m_m(M, N, theta, msg.ranges[i]/mapRes, msg.range_max/mapRes);
+    cout <<"Got invmod"<<endl;
+    for (int j = 0; j < invMod.size(); j++)
     {
-      L[i][j] = L[i][j] + log(invMod[i][j]/(1-invMod[i][j]));
+      ix = invMod[j][0];
+      iy = invMod[j][1];
+      il = invMod[j][2];
+
+      //Calculate updated log odds
+      L[ix][iy] = L[ix][iy] + log(il/(1-il)) - LO[ix][iy];
+      //measL[ix][iy] = measL(ix,iy) +log(il./(1-il))-L0(ix,iy);
     }
   }
+  
+  //Calculate probabilties
+   //m = exp(L)./(1+exp(L));
 
-  //Calculate probabilities
-  //m = exp(L)./(1+exp(L));
   for (int i = 0; i < int (mapHeight/mapRes); i++)
   {
     for (int j = 0; j < int (mapWidth/mapRes); j++)
@@ -156,23 +186,26 @@ void scan_callback(const sensor_msgs::LaserScan& msg)
       knownMap[i][j] = exp(L[i][j])/(1+exp(L[i][j]));
     }
   }
+
+  cout<<"Got probabilities"<<endl;
   
+  //Put it in message
   for (int i = 0; i < int (mapHeight/mapRes); i++)
   {
     for (int j = 0; j < int (mapWidth/mapRes); j++)
     {
       if (knownMap[i][j] == 0.5)
-        knownMapMsg.data[MAP_IDX(knownMapMsg.info.width, j, i)] = -1;
-      else if (knownMap[i][j] >= 0.5)
-        knownMapMsg.data[MAP_IDX(knownMapMsg.info.width, j, i)] = 100;
+        knownMapMsg.data[MAP_IDX(knownMapMsg.info.width, i, j)] = -1;
+      /*else if (knownMap[i][j] >= 0.5)
+        knownMapMsg.data[MAP_IDX(knownMapMsg.info.width, i, j)] = 100;*/
       else 
-        knownMapMsg.data[MAP_IDX(knownMapMsg.info.width, j, i)] = 0;
+        knownMapMsg.data[MAP_IDX(knownMapMsg.info.width, i, j)] = knownMap[i][j]*100;
     }
   }
 
   map_pub.publish(knownMapMsg);
   cout<<"publishing map"<<endl;
-
+  
 }
 
 void spinOnce(ros::Rate& loopRate) {
