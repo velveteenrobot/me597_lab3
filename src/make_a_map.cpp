@@ -34,6 +34,7 @@ using namespace std;
 
 static bool poseReady = false;
 static geometry_msgs::Pose pose;
+bool updateMap = true;
 
 double mapRes = 0.1;
 double mapWidth = 20;
@@ -182,6 +183,8 @@ std::vector< std::vector<double> > get_inverse_m_m(int M, int N, double theta, d
   //cout<<"Got bresenham"<<endl;
 
   std::vector< std::vector<double> > invMod(bres.size(), std::vector<double>(3,0.4));
+  
+
   for(int i = 0; i < invMod.size(); i++) 
   {
 
@@ -192,8 +195,13 @@ std::vector< std::vector<double> > get_inverse_m_m(int M, int N, double theta, d
   if (r < rmax)
   {
     invMod[bres.size() - 1][2] = 0.6;
+    //invMod[bres.size() - 2][2] = 0.6;
+    //invMod[bres.size() - 3][2] = 0.6;
+    //cout<<invMod[bres.size() - 1][0]<< " " << invMod[bres.size() - 1][1]<< " "<< invMod[bres.size() - 1][2] <<endl;
     //cout<<"r less than rmax"<<endl;
   }
+
+
     
   return invMod;
 }
@@ -205,6 +213,11 @@ void pose_callback(const me597_lab3::ips_msg& msg)
     return;
   }*/
 
+  if ((msg.X - pose.position.x) < 0.02 && (msg.Y - pose.position.y) < 0.02 && (msg.Yaw - yaw) < 0.02)
+    updateMap = true;
+  else
+    updateMap = true;
+
   pose.position.x = msg.X - knownMapMsg.info.origin.position.x;
   pose.position.y = msg.Y - knownMapMsg.info.origin.position.y;
 
@@ -214,6 +227,8 @@ void pose_callback(const me597_lab3::ips_msg& msg)
 
   yaw = msg.Yaw;
   poseReady = true;
+
+
 }
 
 //Callback function for the map
@@ -226,27 +241,41 @@ void scan_callback(const sensor_msgs::LaserScan& msg)
 
   double theta, ix, iy, il;
   std::vector< std::vector<double> > invMod;
-
-  for (int i = 0; i < msg.ranges.size(); i++)
+  if (updateMap)
   {
-    theta = yaw + (msg.angle_min  + msg.angle_increment*i);
-    if (!isnan(msg.ranges[i]/mapRes))
+    for (int i = 0; i < msg.ranges.size(); i++)
     {
-      //cout<<"theta: "<< theta<<endl;
-      invMod = get_inverse_m_m(M, N, theta, msg.ranges[i]/mapRes, msg.range_max/mapRes);
-      //cout <<"Got invmod"<<endl;
-      for (int j = 0; j < invMod.size(); j++)
+      theta = yaw + (msg.angle_min  + msg.angle_increment*i);
+      if (!isnan(msg.ranges[i]/mapRes))
       {
-        ix = invMod[j][0];
-        iy = invMod[j][1];
-        il = invMod[j][2];
+        //cout<<"theta: "<< theta<<endl;
+        invMod = get_inverse_m_m(M, N, theta, msg.ranges[i]/mapRes, msg.range_max/mapRes);
 
-        //Calculate updated log odds
-        L[int(ix)][int(iy)] = L[int(ix)][int(iy)] + log(il/(1.0-il)) - LO[int(ix)][int(iy)];
+        if(i==3)
+          cout<<"invmod:"<<endl;
+
+        
+
+        //cout <<"Got invmod"<<endl;
+        for (int j = 0; j < invMod.size(); j++)
+        {
+          ix = invMod[j][0];
+          iy = invMod[j][1];
+          il = invMod[j][2];
+          if (i==3)
+          {
+            cout<<invMod[j][0]<< " " << invMod[j][1]<< " " << invMod[j][2]<<endl;
+          }
+
+          //Calculate updated log odds
+          L[int(ix)][int(iy)] = L[int(ix)][int(iy)] + log(il/(1.0-il)) - LO[int(ix)][int(iy)];
+        }
+        if (i==3)
+          cout<<endl;
+        //cout<<endl;
       }
     }
   }
-  
   //Calculate probabilties
    //m = exp(L)./(1+exp(L));
 
@@ -271,7 +300,8 @@ void scan_callback(const sensor_msgs::LaserScan& msg)
         knownMapMsg.data[MAP_IDX(knownMapMsg.info.width, i, j)] = 100;*/
       else 
       {
-        knownMapMsg.data[MAP_IDX(knownMapMsg.info.width, i, j)] = knownMap[i][j]*100;
+
+        knownMapMsg.data[MAP_IDX(knownMapMsg.info.width, i, j)] = min(100.0,knownMap[i][j]*100);
         
       }
         
@@ -296,8 +326,8 @@ int main(int argc, char **argv)
 
   //inialise map
   knownMapMsg.info.resolution = mapRes;
-  knownMapMsg.info.height = int(mapWidth/mapRes);
-  knownMapMsg.info.width = int(mapHeight/mapRes);
+  knownMapMsg.info.height = int(mapHeight/mapRes);
+  knownMapMsg.info.width = int(mapWidth/mapRes);
   knownMapMsg.info.origin.position.x = -int(mapWidth/2);
   knownMapMsg.info.origin.position.y = -int(mapHeight/2);
   /*knownMapMsg.info.origin.orientation.z = 0.707107;
@@ -334,7 +364,7 @@ int main(int argc, char **argv)
   {
     for (int j = 0; j < int (mapWidth/mapRes); j++)
     {
-      LO[i][j] = log(knownMap[i][j]/(1-knownMap[i][j]));
+      LO[i][j] = log(knownMap[i][j]/(1.0-knownMap[i][j]));
     }
   }
 
