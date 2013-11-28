@@ -9,11 +9,7 @@
 //
 // //////////////////////////////////////////////////////////
 
-#include "turtlebot_example.h"
-#include "Map.h"
-#include "marker.h"
-#include "RRT.h"
-#include "tracking.h"
+#include "make_a_map.h"
 
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -37,7 +33,7 @@ using namespace std;
 //Callback function for the Position topic (LIVE)
 
 static bool poseReady = false;
-static Pose pose;
+static geometry_msgs::Pose pose;
 
 double mapRes = 0.1;
 double mapWidth = 20;
@@ -312,9 +308,6 @@ int main(int argc, char **argv)
   ros::Subscriber pose_sub = n.subscribe("/indoor_pos", 1, pose_callback);
   
   map_pub = n.advertise<nav_msgs::OccupancyGrid>("/map", 1000);
-
-  //Setup topics to Publish from this node
-  markerInit(n);
 
   //Set the loop rate
   ros::Rate loopRate(1/CYCLE_TIME);    //20Hz update rate
