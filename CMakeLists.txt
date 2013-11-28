@@ -34,14 +34,12 @@ generate_messages(
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-
-add_executable(turtlebot_example src/turtlebot_example.cpp src/Map.cpp src/marker.cpp)
+add_executable(turtlebot_localizer src/localizer.cpp src/PoseParticle.cpp src/marker.cpp)
+add_executable(make_a_map src/make_a_map.cpp)
 add_executable(sim_pose_publisher src/sim_pose_publisher.cpp)
 add_executable(vis_pose_publisher src/vis_pose_publisher.cpp)
 
-add_executable(turtlebot_localizer src/localizer.cpp src/PoseParticle.cpp src/marker.cpp)
-
-target_link_libraries(turtlebot_example
+target_link_libraries(make_a_map
   ${catkin_LIBRARIES}
 )
 
