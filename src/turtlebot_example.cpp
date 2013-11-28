@@ -74,7 +74,7 @@ std::vector< std::vector<int> > bresenham(int x0,int y0,int x1,int y1)
 
   int inc;
 
-  std::vector< std::vector<int> > q(dx + 1, std::vector<int>(2,0));
+  std::vector< std::vector<int> > q(dx, std::vector<int>(2,0));
 
   
   if (x0 < x1)
@@ -102,11 +102,13 @@ std::vector< std::vector<int> > bresenham(int x0,int y0,int x1,int y1)
     {
       q[i][0] = y;
       q[i][1] = x;
+      cout<< y << " "<< x<<endl;
     }
     else 
     {
       q[i][0] = x;
       q[i][1] = y;
+      cout<< x << " "<< y<<endl;
     }
 
     error = error - dy;
@@ -117,6 +119,8 @@ std::vector< std::vector<int> > bresenham(int x0,int y0,int x1,int y1)
      } 
      i++;        
   }
+  cout<<endl;
+  cout<<endl;
   return q;
 }
 
@@ -136,9 +140,9 @@ std::vector< std::vector<double> > get_inverse_m_m(int M, int N, double theta, d
   //[list(:,1) list(:,2)] = bresenham(x1,y1,x2,y2);
   std::vector< std::vector<int> > bres = bresenham(x1, y1, x2, y2);
 
-  cout<<"Got bresenham"<<endl;
+  //cout<<"Got bresenham"<<endl;
 
-  std::vector< std::vector<double> > invMod(bres.size(), std::vector<double>(3,0.4));
+  std::vector< std::vector<double> > invMod(bres.size(), std::vector<double>(3,0.3));
   for(int i = 0; i < invMod.size(); i++) 
   {
 
@@ -146,9 +150,12 @@ std::vector< std::vector<double> > get_inverse_m_m(int M, int N, double theta, d
     invMod[i][1] = double (bres[i][1]);
   }
 
-  if (r<rmax)
-    invMod[bres.size() - 1][2] = 0.6;
-  
+  if (r < rmax)
+  {
+    invMod[bres.size() - 1][2] = 0.7;
+    //cout<<"r less than rmax"<<endl;
+  }
+    
   return invMod;
 }
 
@@ -159,8 +166,8 @@ void pose_callback(const me597_lab3::ips_msg& msg)
     return;
   }*/
 
-  pose.position.x = msg.X - knownMapMsg.info.origin.position.x;
-  pose.position.y = msg.Y - knownMapMsg.info.origin.position.y;
+  pose.position.x = msg.X; //- knownMapMsg.info.origin.position.x;
+  pose.position.y = msg.Y; //- knownMapMsg.info.origin.position.y;
 
   quaternionTFToMsg(
       tf::createQuaternionFromRPY(0, 0, msg.Yaw),
@@ -180,22 +187,22 @@ void scan_callback(const sensor_msgs::LaserScan& msg)
 
   double theta, ix, iy, il;
   std::vector< std::vector<double> > invMod;
-  //std::vector< std::vector<double> > measL(M, std::vector<double>(N,0.4));
 
   for (int i = 0; i < msg.ranges.size(); i++)
   {
     theta = yaw + (msg.angle_min  + msg.angle_increment*i);
     invMod = get_inverse_m_m(M, N, theta, msg.ranges[i]/mapRes, msg.range_max/mapRes);
-    cout <<"Got invmod"<<endl;
+    //cout <<"Got invmod"<<endl;
     for (int j = 0; j < invMod.size(); j++)
     {
       ix = invMod[j][0];
       iy = invMod[j][1];
       il = invMod[j][2];
+      cout<<"ix :"<<ix<<endl;
+      cout<<"il :"<<il<<endl;
 
       //Calculate updated log odds
-      L[ix][iy] = L[ix][iy] + log(il/(1-il)) - LO[ix][iy];
-      //measL[ix][iy] = measL(ix,iy) +log(il./(1-il))-L0(ix,iy);
+      L[int(ix)][int(iy)] = L[int(ix)][int(iy)] + log(il/(1.0-il)) - LO[int(ix)][int(iy)];
     }
   }
   
@@ -222,7 +229,11 @@ void scan_callback(const sensor_msgs::LaserScan& msg)
       /*else if (knownMap[i][j] >= 0.5)
         knownMapMsg.data[MAP_IDX(knownMapMsg.info.width, i, j)] = 100;*/
       else 
+      {
         knownMapMsg.data[MAP_IDX(knownMapMsg.info.width, i, j)] = knownMap[i][j]*100;
+        cout<<knownMap[i][j]<<endl;
+      }
+        
     }
   }
 
@@ -244,10 +255,12 @@ int main(int argc, char **argv)
 
   //inialise map
   knownMapMsg.info.resolution = mapRes;
-  knownMapMsg.info.width = int(mapWidth/mapRes);
-  knownMapMsg.info.height = int(mapHeight/mapRes);
-  knownMapMsg.info.origin.position.x = -int(mapWidth/2);
+  knownMapMsg.info.height = int(mapWidth/mapRes);
+  knownMapMsg.info.width = int(mapHeight/mapRes);
+  /*knownMapMsg.info.origin.position.x = -int(mapWidth/2);
   knownMapMsg.info.origin.position.y= -int(mapHeight/2);
+  knownMapMsg.info.origin.orientation.z = 0.707107;
+  knownMapMsg.info.origin.orientation.w = 0.707107;*/
   knownMapMsg.data.resize(int (mapWidth/mapRes * mapHeight/mapRes));
 
   //Subscribe to the desired topics and assign callbacks
