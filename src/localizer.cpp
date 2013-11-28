@@ -18,13 +18,21 @@
 using namespace std;
 using namespace ros;
 
+#define CYCLE_TIME 0.1
+
 SensorModel* sensor_model;
+vector<PoseParticle*> parts;
 
 void odom_callback(const nav_msgs::Odometry& msg) {
-  /*cout<<"Odom: "
-      <<msg.twist.twist.linear.x<<", "
-      <<msg.twist.twist.angular.z<<endl;*/
-  // TODO: update all the particles
+  // update all the particles
+  for (int i = 0; i < parts.size(); ++i) {
+    parts[i]->updateForOdom(
+        msg.twist.twist.linear.x,
+        msg.twist.twist.angular.z,
+        CYCLE_TIME);
+    parts[i]->drawMarker();
+  }
+  flushPoints();
 }
 
 void pose_callback(const me597_lab3::ips_msg& msg) {
@@ -47,8 +55,7 @@ int main(int argc, char **argv) {
   SensorModel model;
   sensor_model = &model;
 
-  vector<PoseParticle*> parts;
-  makeRandomParticles(parts, 200, model, 0, 10, -5, 5);
+  makeRandomParticles(parts, 2000, model, 0, 10, -5, 5);
 
   markerInit(n);
 
@@ -61,7 +68,7 @@ int main(int argc, char **argv) {
       1000);
 
   //Set the loop rate
-  ros::Rate loop_rate(10); // 10 Hz update time
+  ros::Rate loop_rate(1/CYCLE_TIME); // 10 Hz update time
 
   for (int i = 0; i < parts.size(); ++i) {
     parts[i]->drawMarker();
@@ -71,7 +78,6 @@ int main(int argc, char **argv) {
 
   while (ros::ok()) {
     // cout<<"OK"<<endl;
-
     loop_rate.sleep();
     ros::spinOnce();
   }
