@@ -88,6 +88,10 @@ double PoseParticle::getProbability() {
 
   double headingProb = normalProb(headingError, mSensors.getHeadingStd());
 
+  // TODO: emulate what a scan at this particle would see on the map
+  // TODO: compare the emulated scan with the most recent scan,
+  // TODO: produce a scan probability
+
   return 0.8 * distProb + 0.2 * headingProb;
 }
 
