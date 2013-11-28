@@ -37,7 +37,7 @@ void odom_callback(const nav_msgs::Odometry& msg) {
 
 void pose_callback(const me597_lab3::ips_msg& msg) {
   // cout<<"Pose: "<<msg.X<<", "<<msg.Y<<endl;
-  sensor_model->setPosition(msg.X, msg.Y);
+  sensor_model->setPosition(msg.X, msg.Y, msg.Yaw);
 }
 
 void scan_callback(const sensor_msgs::LaserScan& msg) {
@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
   SensorModel model;
   sensor_model = &model;
 
-  makeRandomParticles(parts, 2000, model, 0, 10, -5, 5);
+  makeRandomParticles(parts, 2000, model, -1, 9, -5, 5);
 
   markerInit(n);
 
@@ -76,9 +76,17 @@ int main(int argc, char **argv) {
 
   flushPoints();
 
+  int framesToUpdate = 0;
+
   while (ros::ok()) {
     // cout<<"OK"<<endl;
     loop_rate.sleep();
     ros::spinOnce();
+
+    framesToUpdate--;
+    if (framesToUpdate <= 0) {
+      updateParticleFilter(parts);
+      framesToUpdate = 10;
+    }
   }
 }

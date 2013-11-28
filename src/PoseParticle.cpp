@@ -4,14 +4,35 @@
 #include <cstdlib>
 #include <climits>
 #include <cmath>
+#include <random>
 
 #define PI 3.14159
 
-/* PoseParticle::PoseParticle(const PoseParticle& other)
+using namespace std;
+
+static std::default_random_engine gen;
+static std::normal_distribution<double> distance_distribution(0, 0.1);
+static std::normal_distribution<double> heading_distribution(0, 0.1);
+
+static double randRange(double min, double max) {
+  double range = max - min;
+  int randInt = rand();
+  return min + (double)randInt * range / (double)INT_MAX;
+}
+
+PoseParticle::PoseParticle(const PoseParticle& other, bool addVarience)
     :mX(other.mX),
      mY(other.mY),
      mHeading(other.mHeading),
-     mSensors(other.mSensors) {} */
+     mSensors(other.mSensors) {
+  if (addVarience) {
+    double distError = distance_distribution(gen);
+    double distErrorTheta = randRange(-PI, PI);
+    mX += distError * cos(distErrorTheta);
+    mY += distError * sin(distErrorTheta);;
+    mHeading += heading_distribution(gen);
+  }
+}
 
 PoseParticle::PoseParticle(
     double x,
@@ -19,12 +40,6 @@ PoseParticle::PoseParticle(
     double heading,
     SensorModel& sensors)
     :mX(x), mY(y), mHeading(heading), mSensors(sensors) {}
-
-double randRange(double min, double max) {
-  double range = max - min;
-  int randInt = rand();
-  return min + (double)randInt * range / (double)INT_MAX;
-}
 
 void makeRandomParticles(
     vector<PoseParticle*>& parts,
@@ -61,8 +76,8 @@ double PoseParticle::getProbability() {
   double xError = mSensors.getX() - mX;
   double yError = mSensors.getY() - mY;
 
-  double xProb = normalProb(xError, mSensors.getDistStd());
-  double yProb = normalProb(yError, mSensors.getDistStd());
+  double distError = sqrt(xError*xError + yError*yError);
+  double distProb = normalProb(distError, mSensors.getDistStd());
 
   double headingError = mSensors.getHeading() - mHeading;
   // normalize heading error
@@ -71,9 +86,35 @@ double PoseParticle::getProbability() {
     headingError -= PI * 2;
   }
 
-  return xProb * 0.5 + yProb * 0.5;
+  double headingProb = normalProb(headingError, mSensors.getHeadingStd());
+
+  return 0.8 * distProb + 0.2 * headingProb;
 }
 
 void PoseParticle::drawMarker() {
   drawPoint(mX, mY);
+}
+
+void updateParticleFilter(vector<PoseParticle*>& parts) {
+  // find the net probability
+  double totalProb = 0;
+  for (int i = 0; i < parts.size(); i++) {
+    totalProb += parts[i]->getProbability();
+  }
+  // make the new particles
+  vector<PoseParticle*> oldParts(parts);
+  parts.clear();
+  for (int i = 0; i < oldParts.size(); ++i) {
+    double weightedIndex = randRange(0, totalProb);
+    int j = 0;
+    do {
+      weightedIndex -= oldParts[j]->getProbability();
+    } while (weightedIndex > 0 && j++ < (oldParts.size() - 1));
+    parts.push_back(new PoseParticle(*oldParts[j], true));
+  }
+
+  // Delete the old particles
+  for (int i = 0; i < oldParts.size(); ++i) {
+    delete oldParts[i];
+  }
 }

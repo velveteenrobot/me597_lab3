@@ -54,3 +54,5 @@ target_link_libraries(vis_pose_publisher
 target_link_libraries(turtlebot_localizer
   ${catkin_LIBRARIES}
 )
+
+set_target_properties(turtlebot_localizer PROPERTIES COMPILE_FLAGS -std=c++0x)

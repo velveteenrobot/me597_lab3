@@ -7,7 +7,8 @@ using namespace std;
 
 class PoseParticle {
  public:
-  // PoseParticle(const PoseParticle& other);
+  // has a boolean so that c++ doesn't try to get smart with this ctor
+  PoseParticle(const PoseParticle& other, bool addVarience);
   PoseParticle(double x, double y, double heading, SensorModel& sensors);
   void updateForOdom(double speed, double turnRate, double deltaTime);
 

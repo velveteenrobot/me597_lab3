@@ -6,13 +6,15 @@ class SensorModel {
   double getY() { return mY; }
   double getDistStd() { return 0.1; }
 
-  double getHeading() { return 0.0; } // TODO
+  double getHeading() { return mHeading; }
+  double getHeadingStd() { return 0.3; }
 
-  void setPosition(double x, double y) {
+  void setPosition(double x, double y, double heading) {
     mX = x;
     mY = y;
+    mHeading = heading;
   }
  private:
-  double mX, mY;
+  double mX, mY, mHeading;
 };
 
