@@ -23,7 +23,7 @@ PoseParticle::PoseParticle(
 double randRange(double min, double max) {
   double range = max - min;
   int randInt = rand();
-  return min + randInt * range / INT_MAX;
+  return min + (double)randInt * range / (double)INT_MAX;
 }
 
 void makeRandomParticles(
@@ -75,5 +75,5 @@ double PoseParticle::getProbability() {
 }
 
 void PoseParticle::drawMarker() {
-  drawPoint(SELECTED_TREE, mX, mY);
+  drawPoint(mX, mY);
 }

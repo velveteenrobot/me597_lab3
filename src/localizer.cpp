@@ -13,6 +13,7 @@
 
 #include "SensorModel.h"
 #include "PoseParticle.h"
+#include "marker.h"
 
 using namespace std;
 using namespace ros;
@@ -20,23 +21,23 @@ using namespace ros;
 SensorModel* sensor_model;
 
 void odom_callback(const nav_msgs::Odometry& msg) {
-  cout<<"Odom: "
+  /*cout<<"Odom: "
       <<msg.twist.twist.linear.x<<", "
-      <<msg.twist.twist.angular.z<<endl;
+      <<msg.twist.twist.angular.z<<endl;*/
   // TODO: update all the particles
 }
 
 void pose_callback(const me597_lab3::ips_msg& msg) {
-  cout<<"Pose: "<<msg.X<<", "<<msg.Y<<endl;
+  // cout<<"Pose: "<<msg.X<<", "<<msg.Y<<endl;
   sensor_model->setPosition(msg.X, msg.Y);
 }
 
 void scan_callback(const sensor_msgs::LaserScan& msg) {
-  cout<<"Ranges:";
+  /*cout<<"Ranges:";
   for (unsigned int i = 0; i < msg.ranges.size(); ++i) {
     cout<<" "<<msg.ranges[i];
   }
-  cout<<endl;
+  cout<<endl; */
 }
 
 int main(int argc, char **argv) {
@@ -47,7 +48,9 @@ int main(int argc, char **argv) {
   sensor_model = &model;
 
   vector<PoseParticle*> parts;
-  makeRandomParticles(parts, 200, model, 0, 5, 0, 5);
+  makeRandomParticles(parts, 200, model, 0, 10, -5, 5);
+
+  markerInit(n);
 
   ros::Subscriber odom_sub = n.subscribe("/odom", 1, odom_callback);
   ros::Subscriber ips_sub = n.subscribe("/indoor_pos", 1, pose_callback);
@@ -59,6 +62,12 @@ int main(int argc, char **argv) {
 
   //Set the loop rate
   ros::Rate loop_rate(10); // 10 Hz update time
+
+  for (int i = 0; i < parts.size(); ++i) {
+    parts[i]->drawMarker();
+  }
+
+  flushPoints();
 
   while (ros::ok()) {
     // cout<<"OK"<<endl;

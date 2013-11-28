@@ -2,87 +2,33 @@
 
 #include <visualization_msgs/Marker.h>
 
-static ros::Publisher randomTree;
-static ros::Publisher selectedPath;
-static ros::Publisher carrotPath;
-
+static ros::Publisher particlePub;
+static visualization_msgs::Marker lines;
 void markerInit(ros::NodeHandle& n) {
-  randomTree = n.advertise<visualization_msgs::Marker>(
-      "random_tree",
-      1,
+  particlePub = n.advertise<visualization_msgs::Marker>(
+      "/particle_marker",
+      1000,
       true);
-  selectedPath = n.advertise<visualization_msgs::Marker>(
-      "selected_path",
-      1,
-      true);
-  carrotPath = n.advertise<visualization_msgs::Marker>(
-      "carrot",
-      1,
-      true);
-}
 
-static int lastId = 1;
-
-static void publishMarker(MarkerType type, visualization_msgs::Marker& lines) {
-  switch (type) {
-    case RANDOM_TREE:
-      lines.color.r = 1.0;
-      lines.color.b = 1.0;
-      lines.color.a = 1.0;
-      randomTree.publish(lines);
-      break;
-    case SELECTED_TREE:
-      lines.color.r = 1.0;
-      lines.color.a = 1.0;
-      selectedPath.publish(lines);
-      break;
-    case CARROT:
-      lines.color.b = 1.0;
-      lines.color.a = 1.0;
-      carrotPath.publish(lines);
-      break;
-    default:
-      break;
-  }
-}
-
-void drawLine(MarkerType type, vector<Point>& points) {
-  double x = 0;
-  double y = 0;
-  double steps = 50;
-
-  visualization_msgs::Marker lines;
   lines.header.frame_id = "/map";
-  lines.id = lastId;
-  lastId++;
-  lines.type = visualization_msgs::Marker::LINE_STRIP;
+  lines.id = 1;
+  lines.type = visualization_msgs::Marker::POINTS;
   lines.action = visualization_msgs::Marker::ADD;
   lines.ns = "curves";
   lines.scale.x = 0.05;
-
-  for (int i = 0; i < points.size(); ++i) {
-    lines.points.push_back(points[i]);
-  }
-
-  publishMarker(type, lines);
+  lines.color.r = 1.0;
+  lines.color.a = 1.0;
 }
 
-void drawPoint(MarkerType type, double x, double y) {
-  visualization_msgs::Marker lines;
-  lines.header.frame_id = "/map";
-  lines.id = lastId;
-  lastId++;
-  lines.type = visualization_msgs::Marker::LINE_STRIP;
-  lines.action = visualization_msgs::Marker::ADD;
-  lines.ns = "curves";
-  lines.scale.x = 0.05;
+void flushPoints() {
+  particlePub.publish(lines);
+}
+
+void drawPoint(double x, double y) {
   Point p = Point();
   p.x = x;
   p.y = y;
   lines.points.push_back(p);
-  p.x += 1;
-  p.y += 1;
-  lines.points.push_back(p);
 
-  publishMarker(type, lines);
+  cout<<"Point: "<<x<<", "<<y<<endl;
 }

@@ -307,7 +307,7 @@ int main(int argc, char **argv)
   //Subscribe to the desired topics and assign callbacks
   ros::Subscriber pose_sub = n.subscribe("/indoor_pos", 1, pose_callback);
   
-  map_pub = n.advertise<nav_msgs::OccupancyGrid>("/map", 1000);
+  map_pub = n.advertise<nav_msgs::OccupancyGrid>("/map", 1);
 
   //Set the loop rate
   ros::Rate loopRate(1/CYCLE_TIME);    //20Hz update rate
@@ -317,7 +317,7 @@ int main(int argc, char **argv)
     spinOnce(loopRate);
   }
 
-  ros::Subscriber scan_pub = n.subscribe("/scan_throttle", 1, scan_callback);
+  ros::Subscriber scan_pub = n.subscribe("/scan", 1, scan_callback);
   
 
   for (int i = 0; i < int (mapHeight/mapRes); i++)
@@ -339,7 +339,7 @@ int main(int argc, char **argv)
   }
 
   L = LO;
-  
+  cout<<"running"<<endl;
   // Bilal test commit
   while (ros::ok()) {
     //cout<<"OK"<<endl;

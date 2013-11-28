@@ -27,3 +27,5 @@ void makeRandomParticles(
     double maxX,
     double minY,
     double maxY);
+
+void updateParticleFilter(vector<PoseParticle*>& parts);
