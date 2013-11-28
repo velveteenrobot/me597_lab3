@@ -57,43 +57,66 @@ int round_int( double r ) {
 
 std::vector< std::vector<int> > bresenham(int x0,int y0,int x1,int y1)
 {
-  int dx=fabs(x1-x0);
-  int dy=fabs(y1-y0);
 
-  int inc1 = 2*dy;
-  int inc2 = 2*dy - 2*dx;
-  int D = inc2;
+  bool steep = abs(y1 - y0) > abs(x1 - x0);
+
+  if (steep)
+  {
+    x0 = (x0+y0) - (y0=x0);
+    x1 = (x1+y1) - (y1=x1);
+  }
+
+  int dx=abs(x1-x0);
+  int dy=abs(y1-y0);
+  int error = dx / 2;
+  int ystep;
+  int y = y0;
+
+  int inc;
 
   std::vector< std::vector<int> > q(dx + 1, std::vector<int>(2,0));
 
-  //cout<<"Checking bresenham"<<endl;
   
-  for (int i = 0; i < dx + 1; i++)
+  if (x0 < x1)
   {
-    q[i][0] = x0;
-    q[i][1] = y0;
-
-    //cout<<x0<< " " << y0 <<endl;
-
-    if (x0 == x1 && y0 == y1)
-    {
-      return q;
-    }
-    x0 = x0 + 1;
-    if (D < 0)
-    {
-      D = D + inc1;
-    }
-    else
-    {
-      D = D + inc2;
-      y0 = y0+1;
-    }
+    inc = 1; 
+  }
+  else 
+  {
+    inc = -1;
+  }
+  if (y0 < y1)
+  {
+    ystep = 1;
+  }
+  else 
+  {
+    ystep = -1;
   }
 
-  
+  int i= 0;
 
+  for (int x = x0; x < x1; x+=inc)
+  {
+    if (steep)
+    {
+      q[i][0] = y;
+      q[i][1] = x;
+    }
+    else 
+    {
+      q[i][0] = x;
+      q[i][1] = y;
+    }
 
+    error = error - dy;
+    if (error < 0)
+     {
+      y = y + ystep;
+      error = error + dx;
+     } 
+     i++;        
+  }
   return q;
 }
 
