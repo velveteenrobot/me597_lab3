@@ -40,8 +40,8 @@ static bool poseReady = false;
 static Pose pose;
 
 double mapRes = 0.1;
-double mapWidth = 10;
-double mapHeight = 10;
+double mapWidth = 20;
+double mapHeight = 20;
 double robotMotion [3] = {0.5, 0, -0.5};
 double yaw = 0.0;
 nav_msgs::OccupancyGrid knownMapMsg;
@@ -159,8 +159,8 @@ void pose_callback(const me597_lab3::ips_msg& msg)
     return;
   }*/
 
-  pose.position.x = msg.X;
-  pose.position.y = msg.Y;
+  pose.position.x = msg.X - knownMapMsg.info.origin.position.x;
+  pose.position.y = msg.Y - knownMapMsg.info.origin.position.y;
 
   quaternionTFToMsg(
       tf::createQuaternionFromRPY(0, 0, msg.Yaw),
@@ -242,6 +242,14 @@ int main(int argc, char **argv)
   ros::init(argc,argv,"main_control");
   ros::NodeHandle n;
 
+  //inialise map
+  knownMapMsg.info.resolution = mapRes;
+  knownMapMsg.info.width = int(mapWidth/mapRes);
+  knownMapMsg.info.height = int(mapHeight/mapRes);
+  knownMapMsg.info.origin.position.x = -int(mapWidth/2);
+  knownMapMsg.info.origin.position.y= -int(mapHeight/2);
+  knownMapMsg.data.resize(int (mapWidth/mapRes * mapHeight/mapRes));
+
   //Subscribe to the desired topics and assign callbacks
   ros::Subscriber pose_sub = n.subscribe("/indoor_pos", 1, pose_callback);
   ros::Subscriber scan_pub = n.subscribe("/scan_throttle", 1, scan_callback);
@@ -258,11 +266,7 @@ int main(int argc, char **argv)
     spinOnce(loopRate);
   }
 
-  //inialise map
-  knownMapMsg.info.resolution = mapRes;
-  knownMapMsg.info.width = int(mapWidth/mapRes);
-  knownMapMsg.info.height = int(mapHeight/mapRes);
-  knownMapMsg.data.resize(int (mapWidth/mapRes * mapHeight/mapRes));
+  
 
   for (int i = 0; i < int (mapHeight/mapRes); i++)
   {
