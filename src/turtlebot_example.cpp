@@ -12,8 +12,6 @@
 #include "turtlebot_example.h"
 #include "Map.h"
 #include "marker.h"
-#include "RRT.h"
-#include "tracking.h"
 
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>

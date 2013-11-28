@@ -23,24 +23,7 @@ void markerInit(ros::NodeHandle& n) {
 
 static int lastId = 1;
 
-void drawLine(MarkerType type, vector<Point>& points) {
-  double x = 0;
-  double y = 0;
-  double steps = 50;
-
-  visualization_msgs::Marker lines;
-  lines.header.frame_id = "/map";
-  lines.id = lastId;
-  lastId++;
-  lines.type = visualization_msgs::Marker::LINE_STRIP;
-  lines.action = visualization_msgs::Marker::ADD;
-  lines.ns = "curves";
-  lines.scale.x = 0.05;
-
-  for (int i = 0; i < points.size(); ++i) {
-    lines.points.push_back(points[i]);
-  }
-
+static void publishMarker(MarkerType type, visualization_msgs::Marker& lines) {
   switch (type) {
     case RANDOM_TREE:
       lines.color.r = 1.0;
@@ -61,4 +44,45 @@ void drawLine(MarkerType type, vector<Point>& points) {
     default:
       break;
   }
+}
+
+void drawLine(MarkerType type, vector<Point>& points) {
+  double x = 0;
+  double y = 0;
+  double steps = 50;
+
+  visualization_msgs::Marker lines;
+  lines.header.frame_id = "/map";
+  lines.id = lastId;
+  lastId++;
+  lines.type = visualization_msgs::Marker::LINE_STRIP;
+  lines.action = visualization_msgs::Marker::ADD;
+  lines.ns = "curves";
+  lines.scale.x = 0.05;
+
+  for (int i = 0; i < points.size(); ++i) {
+    lines.points.push_back(points[i]);
+  }
+
+  publishMarker(type, lines);
+}
+
+void drawPoint(MarkerType type, double x, double y) {
+  visualization_msgs::Marker lines;
+  lines.header.frame_id = "/map";
+  lines.id = lastId;
+  lastId++;
+  lines.type = visualization_msgs::Marker::LINE_STRIP;
+  lines.action = visualization_msgs::Marker::ADD;
+  lines.ns = "curves";
+  lines.scale.x = 0.05;
+  Point p = Point();
+  p.x = x;
+  p.y = y;
+  lines.points.push_back(p);
+  p.x += 1;
+  p.y += 1;
+  lines.points.push_back(p);
+
+  publishMarker(type, lines);
 }
