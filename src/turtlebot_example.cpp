@@ -57,70 +57,67 @@ int round_int( double r ) {
 
 std::vector< std::vector<int> > bresenham(int x0,int y0,int x1,int y1)
 {
-
-  bool steep = abs(y1 - y0) > abs(x1 - x0);
-
-  if (steep)
-  {
-    x0 = (x0+y0) - (y0=x0);
-    x1 = (x1+y1) - (y1=x1);
-  }
-
-  int dx=abs(x1-x0);
-  int dy=abs(y1-y0);
-  int error = dx / 2;
-  int ystep;
-  int y = y0;
-
-  int inc;
-
-  std::vector< std::vector<int> > q(dx, std::vector<int>(2,0));
-
   
-  if (x0 < x1)
+  int dx = x1 - x0;
+  int dy = y1 - y0;
+  int xstep1 = 0; 
+  int ystep1 = 0;
+  int xstep2 = 0;
+  int ystep2 = 0;
+  
+
+  if (dx<0) 
+    xstep1 = -1;
+
+  else if (dx>0)
+    xstep1 = 1;
+  
+  if (dy<0) 
+    ystep1 = -1;
+
+  else if (dy>0) 
+    ystep1 = 1;
+
+  if (dx<0) 
+    xstep2 = -1; 
+
+  else if (dx>0) 
+    xstep2 = 1;
+
+  int longest = abs(dx);
+  int shortest = abs(dy);
+
+  if (!(longest>shortest)) 
   {
-    inc = 1; 
-  }
-  else 
-  {
-    inc = -1;
-  }
-  if (y0 < y1)
-  {
-    ystep = 1;
-  }
-  else 
-  {
-    ystep = -1;
+      longest = abs(dy);
+      shortest = abs(dx);
+      if (dy<0) 
+        ystep2 = -1; 
+      else if (dy>0) 
+        ystep2 = 1;
+
+      xstep2 = 0;            
   }
 
-  int i= 0;
+  std::vector< std::vector<int> > q(abs(longest) + 1, std::vector<int>(2,0));
 
-  for (int x = x0; x < x1; x+=inc)
-  {
-    if (steep)
-    {
-      q[i][0] = y;
-      q[i][1] = x;
-      cout<< y << " "<< x<<endl;
-    }
-    else 
-    {
-      q[i][0] = x;
-      q[i][1] = y;
-      cout<< x << " "<< y<<endl;
-    }
+  int numerator = longest >> 1;
 
-    error = error - dy;
-    if (error < 0)
-     {
-      y = y + ystep;
-      error = error + dx;
-     } 
-     i++;        
+  for (int i=0;i<=longest;i++) {
+      q[i][0] = x0;
+      q[i][1] = y0;
+      
+      numerator += shortest;
+      
+      if (!(numerator<longest)) {
+          numerator -= longest;
+          x0 += xstep1;
+          y0 += ystep1;
+      } else {
+          x0 += xstep2;
+          y0 += ystep2;
+      }
   }
-  cout<<endl;
-  cout<<endl;
   return q;
 }
 
@@ -166,8 +163,8 @@ void pose_callback(const me597_lab3::ips_msg& msg)
     return;
   }*/
 
-  pose.position.x = msg.X; //- knownMapMsg.info.origin.position.x;
-  pose.position.y = msg.Y; //- knownMapMsg.info.origin.position.y;
+  pose.position.x = msg.X - knownMapMsg.info.origin.position.x;
+  pose.position.y = msg.Y - knownMapMsg.info.origin.position.y;
 
   quaternionTFToMsg(
       tf::createQuaternionFromRPY(0, 0, msg.Yaw),
@@ -191,6 +188,7 @@ void scan_callback(const sensor_msgs::LaserScan& msg)
   for (int i = 0; i < msg.ranges.size(); i++)
   {
     theta = yaw + (msg.angle_min  + msg.angle_increment*i);
+    cout<<"theta: "<< theta<<endl;
     invMod = get_inverse_m_m(M, N, theta, msg.ranges[i]/mapRes, msg.range_max/mapRes);
     //cout <<"Got invmod"<<endl;
     for (int j = 0; j < invMod.size(); j++)
@@ -198,8 +196,6 @@ void scan_callback(const sensor_msgs::LaserScan& msg)
       ix = invMod[j][0];
       iy = invMod[j][1];
       il = invMod[j][2];
-      cout<<"ix :"<<ix<<endl;
-      cout<<"il :"<<il<<endl;
 
       //Calculate updated log odds
       L[int(ix)][int(iy)] = L[int(ix)][int(iy)] + log(il/(1.0-il)) - LO[int(ix)][int(iy)];
@@ -231,7 +227,7 @@ void scan_callback(const sensor_msgs::LaserScan& msg)
       else 
       {
         knownMapMsg.data[MAP_IDX(knownMapMsg.info.width, i, j)] = knownMap[i][j]*100;
-        cout<<knownMap[i][j]<<endl;
+        
       }
         
     }
@@ -257,9 +253,9 @@ int main(int argc, char **argv)
   knownMapMsg.info.resolution = mapRes;
   knownMapMsg.info.height = int(mapWidth/mapRes);
   knownMapMsg.info.width = int(mapHeight/mapRes);
-  /*knownMapMsg.info.origin.position.x = -int(mapWidth/2);
-  knownMapMsg.info.origin.position.y= -int(mapHeight/2);
-  knownMapMsg.info.origin.orientation.z = 0.707107;
+  knownMapMsg.info.origin.position.x = -int(mapWidth/2);
+  knownMapMsg.info.origin.position.y = -int(mapHeight/2);
+  /*knownMapMsg.info.origin.orientation.z = 0.707107;
   knownMapMsg.info.origin.orientation.w = 0.707107;*/
   knownMapMsg.data.resize(int (mapWidth/mapRes * mapHeight/mapRes));
 
