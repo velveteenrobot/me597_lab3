@@ -51,85 +51,131 @@ std::vector< std::vector<double> > LO(int(mapHeight/mapRes), std::vector<double>
 std::vector< std::vector<double> > L(int(mapHeight/mapRes), std::vector<double>(int(mapWidth/mapRes),0));
 ros::Publisher map_pub; 
 
-int round_int( double r ) {
-    return (r > 0.0) ? (r + 0.5) : (r - 0.5); 
+int round_int( double r ) 
+{
+  if (r > 0.0)
+  {
+    r = r + 0.5;
+  }
+  else
+  {
+    r = r - 0.5;
+  }
+
+  return int (r);
 }
 
 std::vector< std::vector<int> > bresenham(int x0,int y0,int x1,int y1)
 {
   
-  int dx = x1 - x0;
-  int dy = y1 - y0;
-  int xstep1 = 0; 
-  int ystep1 = 0;
-  int xstep2 = 0;
-  int ystep2 = 0;
-  
+  bool steep = abs(y1 - y0) > abs(x1 - x0);
 
-  if (dx<0) 
-    xstep1 = -1;
-
-  else if (dx>0)
-    xstep1 = 1;
-  
-  if (dy<0) 
-    ystep1 = -1;
-
-  else if (dy>0) 
-    ystep1 = 1;
-
-  if (dx<0) 
-    xstep2 = -1; 
-
-  else if (dx>0) 
-    xstep2 = 1;
-
-  int longest = abs(dx);
-  int shortest = abs(dy);
-
-  if (!(longest>shortest)) 
+  if (steep)
   {
-      longest = abs(dy);
-      shortest = abs(dx);
-      if (dy<0) 
-        ystep2 = -1; 
-      else if (dy>0) 
-        ystep2 = 1;
-
-      xstep2 = 0;            
+    x0 = (x0+y0) - (y0=x0);
+    x1 = (x1+y1) - (y1=x1);
   }
 
-  std::vector< std::vector<int> > q(abs(longest) + 1, std::vector<int>(2,0));
+  int dx=abs(x1-x0);
+  int dy=abs(y1-y0);
+  int error = dx / 2;
+  int ystep;
+  int y = y0;
 
-  int numerator = longest >> 1;
+  int inc;
 
-  for (int i=0;i<=longest;i++) {
-      q[i][0] = x0;
-      q[i][1] = y0;
-      
-      numerator += shortest;
-      
-      if (!(numerator<longest)) {
-          numerator -= longest;
-          x0 += xstep1;
-          y0 += ystep1;
-      } else {
-          x0 += xstep2;
-          y0 += ystep2;
-      }
+  std::vector< std::vector<int> > q(dx, std::vector<int>(2,0));
+
+  
+  if (x0 < x1)
+  {
+    inc = 1; 
+  }
+  else 
+  {
+    inc = -1;
+  }
+  if (y0 < y1)
+  {
+    ystep = 1;
+  }
+  else 
+  {
+    ystep = -1;
+  }
+
+  int i= 0;
+
+  for (int x = x0; x < x1; x+=inc)
+  {
+    if (steep)
+    {
+      q[i][0] = y;
+      q[i][1] = x;
+    }
+    else 
+    {
+      q[i][0] = x;
+      q[i][1] = y;
+    }
+
+    error = error - dy;
+    if (error < 0)
+     {
+      y = y + ystep;
+      error = error + dx;
+     } 
+     i++;        
+  }
+
+  for (int x = x0; x > x1; x+=inc)
+  {
+    if (steep)
+    {
+      q[i][0] = y;
+      q[i][1] = x;
+    }
+    else 
+    {
+      q[i][0] = x;
+      q[i][1] = y;
+    }
+
+    error = error - dy;
+    if (error < 0)
+     {
+      y = y + ystep;
+      error = error + dx;
+     } 
+     i++; 
   }
   return q;
 }
 
 std::vector< std::vector<double> > get_inverse_m_m(int M, int N, double theta, double r, double rmax)
 {
-  
+
+
   //Range finder inverse measurement model
   int x1 = max(1,min(M,round_int(pose.position.x/mapRes)));
   int y1 = max(1,min(N,round_int(pose.position.y/mapRes)));
 
-  double endpt_x = pose.position.x/mapRes + r*cos(theta);
-  double endpt_y = pose.position.y/mapRes + r*sin(theta);
+  double endpt_x, endpt_y;
+
+  
+
+  if ( -2*PI <= theta && theta <= 2*PI)
+  {  
+    endpt_x = double (pose.position.x/mapRes) + r*cos(theta);
+    endpt_y = double (pose.position.y/mapRes) + r*sin(theta);
+  }
+  else 
+  {
+    endpt_x = double (pose.position.x/mapRes);
+    endpt_y = double (pose.position.y/mapRes);
+  }
+
+  
 
   int x2 = max(1,min(M,round_int(endpt_x)));
   int y2 = max(1,min(N,round_int(endpt_y)));
@@ -139,7 +185,7 @@ std::vector< std::vector<double> > get_inverse_m_m(int M, int N, double theta, d
 
   //cout<<"Got bresenham"<<endl;
 
-  std::vector< std::vector<double> > invMod(bres.size(), std::vector<double>(3,0.3));
+  std::vector< std::vector<double> > invMod(bres.size(), std::vector<double>(3,0.4));
   for(int i = 0; i < invMod.size(); i++) 
   {
 
@@ -149,7 +195,7 @@ std::vector< std::vector<double> > get_inverse_m_m(int M, int N, double theta, d
 
   if (r < rmax)
   {
-    invMod[bres.size() - 1][2] = 0.7;
+    invMod[bres.size() - 1][2] = 0.6;
     //cout<<"r less than rmax"<<endl;
   }
     
@@ -177,7 +223,7 @@ void pose_callback(const me597_lab3::ips_msg& msg)
 //Callback function for the map
 void scan_callback(const sensor_msgs::LaserScan& msg)
 {
-  cout<<"Scan received"<<endl;
+  //cout<<"Scan received"<<endl;
 
   int M = int (mapHeight/mapRes);
   int N = int (mapWidth/mapRes);
@@ -188,17 +234,20 @@ void scan_callback(const sensor_msgs::LaserScan& msg)
   for (int i = 0; i < msg.ranges.size(); i++)
   {
     theta = yaw + (msg.angle_min  + msg.angle_increment*i);
-    cout<<"theta: "<< theta<<endl;
-    invMod = get_inverse_m_m(M, N, theta, msg.ranges[i]/mapRes, msg.range_max/mapRes);
-    //cout <<"Got invmod"<<endl;
-    for (int j = 0; j < invMod.size(); j++)
+    if (!isnan(msg.ranges[i]/mapRes))
     {
-      ix = invMod[j][0];
-      iy = invMod[j][1];
-      il = invMod[j][2];
+      //cout<<"theta: "<< theta<<endl;
+      invMod = get_inverse_m_m(M, N, theta, msg.ranges[i]/mapRes, msg.range_max/mapRes);
+      //cout <<"Got invmod"<<endl;
+      for (int j = 0; j < invMod.size(); j++)
+      {
+        ix = invMod[j][0];
+        iy = invMod[j][1];
+        il = invMod[j][2];
 
-      //Calculate updated log odds
-      L[int(ix)][int(iy)] = L[int(ix)][int(iy)] + log(il/(1.0-il)) - LO[int(ix)][int(iy)];
+        //Calculate updated log odds
+        L[int(ix)][int(iy)] = L[int(ix)][int(iy)] + log(il/(1.0-il)) - LO[int(ix)][int(iy)];
+      }
     }
   }
   
@@ -213,7 +262,7 @@ void scan_callback(const sensor_msgs::LaserScan& msg)
     }
   }
 
-  cout<<"Got probabilities"<<endl;
+  //cout<<"Got probabilities"<<endl;
   
   //Put it in message
   for (int i = 0; i < int (mapHeight/mapRes); i++)
@@ -234,7 +283,7 @@ void scan_callback(const sensor_msgs::LaserScan& msg)
   }
 
   map_pub.publish(knownMapMsg);
-  cout<<"publishing map"<<endl;
+  //cout<<"publishing map"<<endl;
   
 }
 
@@ -261,7 +310,7 @@ int main(int argc, char **argv)
 
   //Subscribe to the desired topics and assign callbacks
   ros::Subscriber pose_sub = n.subscribe("/indoor_pos", 1, pose_callback);
-  ros::Subscriber scan_pub = n.subscribe("/scan_throttle", 1, scan_callback);
+  
   map_pub = n.advertise<nav_msgs::OccupancyGrid>("/map", 1000);
 
   //Setup topics to Publish from this node
@@ -275,6 +324,7 @@ int main(int argc, char **argv)
     spinOnce(loopRate);
   }
 
+  ros::Subscriber scan_pub = n.subscribe("/scan_throttle", 1, scan_callback);
   
 
   for (int i = 0; i < int (mapHeight/mapRes); i++)
@@ -299,7 +349,7 @@ int main(int argc, char **argv)
   
   // Bilal test commit
   while (ros::ok()) {
-    cout<<"OK"<<endl;
+    //cout<<"OK"<<endl;
   
     spinOnce(loopRate);
   }
