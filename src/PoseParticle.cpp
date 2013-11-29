@@ -11,7 +11,7 @@
 using namespace std;
 
 static std::default_random_engine gen;
-static std::normal_distribution<double> distance_distribution(0, 0.1);
+static std::normal_distribution<double> distance_distribution(0, 0.05);
 static std::normal_distribution<double> heading_distribution(0, 0.1);
 
 static double randRange(double min, double max) {
@@ -92,7 +92,7 @@ double PoseParticle::getProbability() {
   // TODO: compare the emulated scan with the most recent scan,
   // TODO: produce a scan probability
 
-  return 0.8 * distProb + 0.2 * headingProb;
+  return 0.95 * distProb + 0.05 * headingProb;
 }
 
 void PoseParticle::drawMarker() {

@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
   SensorModel model;
   sensor_model = &model;
 
-  makeRandomParticles(parts, 2000, model, -1, 9, -5, 5);
+  makeRandomParticles(parts, 500, model, -1, 9, -5, 5);
 
   markerInit(n);
 
