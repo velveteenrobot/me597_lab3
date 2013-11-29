@@ -10,6 +10,7 @@
 // //////////////////////////////////////////////////////////
 
 #include "make_a_map.h"
+#include "marker.h"
 
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -36,9 +37,9 @@ static bool poseReady = false;
 static geometry_msgs::Pose pose;
 bool updateMap = true;
 
-double mapRes = 0.1;
-double mapWidth = 20;
-double mapHeight = 20;
+double mapRes = 0.05;
+double mapWidth = 12;
+double mapHeight = 12;
 double robotMotion [3] = {0.5, 0, -0.5};
 double yaw = 0.0;
 nav_msgs::OccupancyGrid knownMapMsg;
@@ -209,9 +210,9 @@ std::vector< std::vector<double> > get_inverse_m_m(int M, int N, double theta, d
 void pose_callback(const me597_lab3::ips_msg& msg)
 {
   //This function is called when a new position message is received
-  /*if(msg.tag_id != TAGID) {
+  if(msg.tag_id != TAGID) {
     return;
-  }*/
+  }
 
   if ((msg.X - pose.position.x) < 0.02 && (msg.Y - pose.position.y) < 0.02 && (msg.Yaw - yaw) < 0.02)
     updateMap = true;
@@ -227,6 +228,19 @@ void pose_callback(const me597_lab3::ips_msg& msg)
 
   yaw = msg.Yaw;
   poseReady = true;
+
+  vector<Point> points;
+
+  // plot /indoor_pos 
+  points.push_back(pose.position);
+  Pose closePose = pose;
+
+  closePose.position.x = pose.position.x + 0.01;
+  closePose.position.y = pose.position.y + 0.01;
+  points.push_back(closePose.position);
+
+  //drawLine(CARROT, points);
+
 
 
 }
@@ -324,6 +338,9 @@ int main(int argc, char **argv)
   ros::init(argc,argv,"main_control");
   ros::NodeHandle n;
 
+
+  markerInit(n);
+
   //inialise map
   knownMapMsg.info.resolution = mapRes;
   knownMapMsg.info.height = int(mapHeight/mapRes);
@@ -337,7 +354,7 @@ int main(int argc, char **argv)
   //Subscribe to the desired topics and assign callbacks
   ros::Subscriber pose_sub = n.subscribe("/indoor_pos", 1, pose_callback);
   
-  map_pub = n.advertise<nav_msgs::OccupancyGrid>("/map", 1);
+  map_pub = n.advertise<nav_msgs::OccupancyGrid>("/map", 1000);
 
   //Set the loop rate
   ros::Rate loopRate(1/CYCLE_TIME);    //20Hz update rate
@@ -347,7 +364,9 @@ int main(int argc, char **argv)
     spinOnce(loopRate);
   }
 
-  ros::Subscriber scan_pub = n.subscribe("/scan", 1, scan_callback);
+  cout<<"Got position"<<endl;
+
+  ros::Subscriber scan_pub = n.subscribe("/turtlebot4/scan_throttle", 1, scan_callback);
   
 
   for (int i = 0; i < int (mapHeight/mapRes); i++)
@@ -369,7 +388,7 @@ int main(int argc, char **argv)
   }
 
   L = LO;
-  cout<<"running"<<endl;
+  
   // Bilal test commit
   while (ros::ok()) {
     //cout<<"OK"<<endl;
