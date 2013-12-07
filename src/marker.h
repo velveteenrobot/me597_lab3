@@ -9,5 +9,8 @@ using namespace geometry_msgs;
 
 void markerInit(ros::NodeHandle& n);
 void drawPoint(double x, double y);
+void addEstimate(double x, double y);
+void addPosition(double x, double y);
+
 
 void flushPoints();

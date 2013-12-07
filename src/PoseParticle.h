@@ -15,6 +15,8 @@ class PoseParticle {
   double getProbability();
 
   void drawMarker();
+  double getX() { return mX; }
+  double getY() { return mY; }
  private:
   double mX, mY, mHeading;
   SensorModel& mSensors;
@@ -30,3 +32,4 @@ void makeRandomParticles(
     double maxY);
 
 void updateParticleFilter(vector<PoseParticle*>& parts);
+void drawParticleFilter(vector<PoseParticle*>& parts);

@@ -38,14 +38,7 @@ void odom_callback(const nav_msgs::Odometry& msg) {
 void pose_callback(const me597_lab3::ips_msg& msg) {
   // cout<<"Pose: "<<msg.X<<", "<<msg.Y<<endl;
   sensor_model->setPosition(msg.X, msg.Y, msg.Yaw);
-}
-
-void scan_callback(const sensor_msgs::LaserScan& msg) {
-  /*cout<<"Ranges:";
-  for (unsigned int i = 0; i < msg.ranges.size(); ++i) {
-    cout<<" "<<msg.ranges[i];
-  }
-  cout<<endl; */
+  addPosition(msg.X, msg.Y);
 }
 
 int main(int argc, char **argv) {
@@ -55,13 +48,12 @@ int main(int argc, char **argv) {
   SensorModel model;
   sensor_model = &model;
 
-  makeRandomParticles(parts, 500, model, -1, 9, -5, 5);
+  makeRandomParticles(parts, 500, model, -5, 5, -1, 9);
 
   markerInit(n);
 
-  ros::Subscriber odom_sub = n.subscribe("/odom", 1, odom_callback);
+  ros::Subscriber odom_sub = n.subscribe("/turtlebot4/odom", 1, odom_callback);
   ros::Subscriber ips_sub = n.subscribe("/indoor_pos", 1, pose_callback);
-  ros::Subscriber scan_sub = n.subscribe("/scan", 1, scan_callback);
 
   ros::Publisher pose_estimate_publisher = n.advertise<me597_lab3::ips_msg>(
       "/pose_esitmate",
@@ -83,6 +75,7 @@ int main(int argc, char **argv) {
     loop_rate.sleep();
     ros::spinOnce();
 
+    drawParticleFilter(parts);
     framesToUpdate--;
     if (framesToUpdate <= 0) {
       updateParticleFilter(parts);

@@ -11,8 +11,8 @@
 using namespace std;
 
 static std::default_random_engine gen;
-static std::normal_distribution<double> distance_distribution(0, 0.05);
-static std::normal_distribution<double> heading_distribution(0, 0.1);
+static std::normal_distribution<double> distance_distribution(0, 0.1);
+static std::normal_distribution<double> heading_distribution(0, 0.2);
 
 static double randRange(double min, double max) {
   double range = max - min;
@@ -92,7 +92,7 @@ double PoseParticle::getProbability() {
   // TODO: compare the emulated scan with the most recent scan,
   // TODO: produce a scan probability
 
-  return 0.95 * distProb + 0.05 * headingProb;
+  return distProb;// + 0.05 * headingProb;
 }
 
 void PoseParticle::drawMarker() {
@@ -121,4 +121,14 @@ void updateParticleFilter(vector<PoseParticle*>& parts) {
   for (int i = 0; i < oldParts.size(); ++i) {
     delete oldParts[i];
   }
+}
+
+void drawParticleFilter(vector<PoseParticle*>& parts) {
+  double avgX = 0.0;
+  double avgY = 0.0;
+  for (int i = 0; i < parts.size(); ++i) {
+    avgX += parts[i]->getX() / (double)parts.size();
+    avgY += parts[i]->getY() / (double)parts.size();
+  }
+  addEstimate(avgX, avgY);
 }

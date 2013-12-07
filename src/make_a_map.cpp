@@ -309,7 +309,7 @@ void scan_callback(const sensor_msgs::LaserScan& msg)
   }
 
   map_pub.publish(knownMapMsg);
-  //cout<<"publishing map"<<endl;
+  cout<<"publishing map"<<endl;
   
 }
 
@@ -347,7 +347,7 @@ int main(int argc, char **argv)
     spinOnce(loopRate);
   }
 
-  ros::Subscriber scan_pub = n.subscribe("/scan", 1, scan_callback);
+  ros::Subscriber scan_pub = n.subscribe("/turtlebot4/scan", 1, scan_callback);
   
 
   for (int i = 0; i < int (mapHeight/mapRes); i++)

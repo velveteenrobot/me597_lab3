@@ -6,7 +6,10 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /Map1
+        - /Map1/Status1
         - /RobotModel1
+        - /RobotModel1/Status1
         - /Marker1
       Splitter Ratio: 0.5
     Tree Height: 747
@@ -230,7 +233,7 @@ Visualization Manager:
           Show Trail: false
           Value: true
       Name: RobotModel
-      Robot Description: robot_description
+      Robot Description: /turtlebot4/robot_description
       TF Prefix: ""
       Update Interval: 0
       Value: true
@@ -243,6 +246,8 @@ Visualization Manager:
         base_footprint:
           Value: true
         base_link:
+          Value: true
+        camera:
           Value: true
         camera_depth_frame:
           Value: true
@@ -265,8 +270,6 @@ Visualization Manager:
         cliff_sensor_right_link:
           Value: true
         gyro_link:
-          Value: true
-        map:
           Value: true
         odom:
           Value: true
@@ -308,6 +311,8 @@ Visualization Manager:
           Value: true
         pole_top_3_link:
           Value: true
+        tag5:
+          Value: true
         wheel_left_link:
           Value: true
         wheel_right_link:
@@ -318,73 +323,7 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        odom:
-          base_footprint:
-            base_link:
-              camera_rgb_frame:
-                camera_depth_frame:
-                  camera_depth_optical_frame:
-                    {}
-                camera_link:
-                  {}
-                camera_rgb_optical_frame:
-                  {}
-              caster_back_link:
-                {}
-              caster_front_link:
-                {}
-              cliff_sensor_front_link:
-                {}
-              cliff_sensor_left_link:
-                {}
-              cliff_sensor_right_link:
-                {}
-              gyro_link:
-                {}
-              plate_bottom_link:
-                {}
-              plate_middle_link:
-                {}
-              plate_top_link:
-                {}
-              pole_bottom_0_link:
-                {}
-              pole_bottom_1_link:
-                {}
-              pole_bottom_2_link:
-                {}
-              pole_bottom_3_link:
-                {}
-              pole_bottom_4_link:
-                {}
-              pole_bottom_5_link:
-                {}
-              pole_kinect_0_link:
-                {}
-              pole_kinect_1_link:
-                {}
-              pole_middle_0_link:
-                {}
-              pole_middle_1_link:
-                {}
-              pole_middle_2_link:
-                {}
-              pole_middle_3_link:
-                {}
-              pole_top_0_link:
-                {}
-              pole_top_1_link:
-                {}
-              pole_top_2_link:
-                {}
-              pole_top_3_link:
-                {}
-              wheel_left_link:
-                {}
-              wheel_right_link:
-                {}
-            map:
-              {}
+        {}
       Update Interval: 0
       Value: true
     - Class: rviz/Marker
@@ -392,7 +331,7 @@ Visualization Manager:
       Marker Topic: /particle_marker
       Name: Marker
       Namespaces:
-        {}
+        "": true
       Queue Size: 1000
       Value: true
   Enabled: true
