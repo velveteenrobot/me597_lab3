@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
 
   markerInit(n);
 
-  ros::Subscriber odom_sub = n.subscribe("/turtlebot4/odom", 1, odom_callback);
+  ros::Subscriber odom_sub = n.subscribe("/odom", 1, odom_callback);
   ros::Subscriber ips_sub = n.subscribe("/indoor_pos", 1, pose_callback);
 
   ros::Publisher pose_estimate_publisher = n.advertise<me597_lab3::ips_msg>(
@@ -62,6 +62,7 @@ int main(int argc, char **argv) {
   //Set the loop rate
   ros::Rate loop_rate(1/CYCLE_TIME); // 10 Hz update time
 
+  cout<<"hello!"<<endl;
   for (int i = 0; i < parts.size(); ++i) {
     parts[i]->drawMarker();
   }
@@ -75,6 +76,7 @@ int main(int argc, char **argv) {
     loop_rate.sleep();
     ros::spinOnce();
 
+    cout<<"draw parts"<<endl;
     drawParticleFilter(parts);
     framesToUpdate--;
     if (framesToUpdate <= 0) {

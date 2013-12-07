@@ -14,7 +14,7 @@ double SensorModel::getDistStd() {
 }
 
 void SensorModel::setPosition(double x, double y, double heading) {
-  mX = x + position_noise(gen);
-  mY = y + position_noise(gen);
+  mX = x; // + position_noise(gen);
+  mY = y; // + position_noise(gen);
   mHeading = heading;
 }
