@@ -14,3 +14,10 @@ void addPosition(double x, double y);
 
 
 void flushPoints();
+typedef enum {
+  RANDOM_TREE,
+  SELECTED_TREE,
+  CARROT,
+} MarkerType;
+
+void drawLine(MarkerType type, vector<Point>& points);

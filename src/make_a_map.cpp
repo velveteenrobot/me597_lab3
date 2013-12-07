@@ -38,8 +38,8 @@ static geometry_msgs::Pose pose;
 bool updateMap = true;
 
 double mapRes = 0.05;
-double mapWidth = 12;
-double mapHeight = 12;
+double mapWidth = 20;
+double mapHeight = 20;
 double robotMotion [3] = {0.5, 0, -0.5};
 double yaw = 0.0;
 nav_msgs::OccupancyGrid knownMapMsg;
@@ -210,9 +210,9 @@ std::vector< std::vector<double> > get_inverse_m_m(int M, int N, double theta, d
 void pose_callback(const me597_lab3::ips_msg& msg)
 {
   //This function is called when a new position message is received
-  if(msg.tag_id != TAGID) {
+  /*if(msg.tag_id != TAGID) {
     return;
-  }
+  }*/
 
   if ((msg.X - pose.position.x) < 0.02 && (msg.Y - pose.position.y) < 0.02 && (msg.Yaw - yaw) < 0.02)
     updateMap = true;
@@ -232,14 +232,19 @@ void pose_callback(const me597_lab3::ips_msg& msg)
   vector<Point> points;
 
   // plot /indoor_pos 
-  points.push_back(pose.position);
-  Pose closePose = pose;
+  Pose cur_pose;
+  cur_pose.position.x = msg.X;
+  cur_pose.position.y = msg.Y;
 
-  closePose.position.x = pose.position.x + 0.01;
-  closePose.position.y = pose.position.y + 0.01;
+
+  points.push_back(cur_pose.position);
+  Pose closePose = cur_pose;
+
+  closePose.position.x = cur_pose.position.x + 0.01;
+  closePose.position.y = cur_pose.position.y + 0.01;
   points.push_back(closePose.position);
 
-  //drawLine(CARROT, points);
+  drawLine(CARROT, points);
 
 
 
